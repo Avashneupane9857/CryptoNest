@@ -19,7 +19,7 @@ const BlockchainSelector = () => {
             CryptoNest
           </span>
           <span className="bg-purple-500 text-xs text-white px-2 py-1 rounded-full">
-            beta
+            Mugi
           </span>
         </div>
         <button
@@ -116,7 +116,7 @@ const BlockchainSelector = () => {
           isDark ? "text-gray-400" : "text-gray-600"
         }`}
       >
-        Developed with ❤️ by Avash
+        Developed with ❤️ by Mugi's
       </footer>
     </div>
   );
