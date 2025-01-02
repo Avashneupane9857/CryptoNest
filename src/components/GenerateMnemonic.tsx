@@ -1,24 +1,32 @@
 import { generateMnemonic } from "bip39";
 import { useState, useEffect } from "react";
 import { KeyIcon, CopyIcon, RefreshCwIcon } from "lucide-react";
-
-const GenerateMnemonic = ({ onMnemonicGenerated }) => {
+interface GenerateMnemonicProps {
+  onMnemonicGenerated: (generated: boolean, mnemonic: string) => void;
+}
+const GenerateMnemonic = ({ onMnemonicGenerated }: GenerateMnemonicProps) => {
   const [mnemonic, setMnemonic] = useState("");
   const [isDark] = useState(true);
 
   const generateNewMnemonic = async () => {
-    const mn = await generateMnemonic();
-    setMnemonic(mn);
+    try {
+      const newMnemonic = await generateMnemonic();
+      setMnemonic(newMnemonic);
+
+      onMnemonicGenerated(true, newMnemonic);
+    } catch (error) {
+      console.error("Error generating mnemonic:", error);
+      onMnemonicGenerated(false, "");
+    }
   };
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(mnemonic);
   };
 
-  // Notify parent component whenever mnemonic changes
   useEffect(() => {
-    onMnemonicGenerated(!!mnemonic);
-  }, [mnemonic, onMnemonicGenerated]);
+    generateNewMnemonic();
+  }, []);
 
   return (
     <div className="max-w-2xl mx-auto">

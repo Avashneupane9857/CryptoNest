@@ -8,13 +8,13 @@ const BlockchainSelector = () => {
   const [hasMnemonic, setHasMnemonic] = useState(false);
   const [showBlockchains, setShowBlockchains] = useState(false);
   const navigate = useNavigate();
-
+  const [mnemonic, setMnemonic] = useState("");
   const handleSolana = () => {
-    navigate("/solana");
+    navigate("/solana", { state: { mnemonic } });
   };
 
   const handleEth = () => {
-    navigate("/eth");
+    navigate("/eth", { state: { mnemonic } });
   };
 
   const handleProceed = () => {
@@ -23,8 +23,9 @@ const BlockchainSelector = () => {
     }
   };
 
-  const handleMnemonicGenerated = (generated) => {
+  const handleMnemonicGenerated = (generated: boolean, phrase: string) => {
     setHasMnemonic(generated);
+    setMnemonic(phrase);
   };
 
   return (
