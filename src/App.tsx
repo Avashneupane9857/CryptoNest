@@ -1,7 +1,7 @@
 import { Route, Routes } from "react-router-dom";
 import BlockchainSelector from "./components/BlockchainSelector";
 import { SolanaWallet } from "./components/SolanaWallet";
-import EthWallet from "./components/EthWallet";
+import { EthWallet } from "./components/EthWallet";
 
 function App() {
   return (

@@ -11,6 +11,7 @@ import {
   SunIcon,
   MoonIcon,
   CurlyBracesIcon,
+  Trash2Icon,
 } from "lucide-react";
 
 export function SolanaWallet() {
@@ -39,6 +40,10 @@ export function SolanaWallet() {
     } catch (error) {
       console.error("Failed to copy:", error);
     }
+  };
+
+  const deleteWallet = (indexToDelete: number) => {
+    setPublicKeys(publicKeys.filter((_, index) => index !== indexToDelete));
   };
 
   return (
@@ -107,7 +112,7 @@ export function SolanaWallet() {
               key={publicKey.toBase58()}
               className={`p-4 rounded-xl ${
                 isDark ? "bg-white/10" : "bg-black/5"
-              } transition-colors`}
+              } transition-colors group`}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
@@ -133,23 +138,38 @@ export function SolanaWallet() {
                     </p>
                   </div>
                 </div>
-                <button
-                  onClick={() => copyToClipboard(publicKey.toBase58(), index)}
-                  className={`p-2 rounded-md ${
-                    isDark ? "hover:bg-white/10" : "hover:bg-black/10"
-                  } transition-colors`}
-                  title="Copy address"
-                >
-                  <CopyIcon
-                    className={`h-4 w-4 ${
-                      isCopied === index
-                        ? "text-green-500"
-                        : isDark
-                        ? "text-white"
-                        : "text-black"
-                    }`}
-                  />
-                </button>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => copyToClipboard(publicKey.toBase58(), index)}
+                    className={`p-2 rounded-md ${
+                      isDark ? "hover:bg-white/10" : "hover:bg-black/10"
+                    } transition-colors`}
+                    title="Copy address"
+                  >
+                    <CopyIcon
+                      className={`h-4 w-4 ${
+                        isCopied === index
+                          ? "text-green-500"
+                          : isDark
+                          ? "text-white"
+                          : "text-black"
+                      }`}
+                    />
+                  </button>
+                  <button
+                    onClick={() => deleteWallet(index)}
+                    className={`p-2 rounded-md opacity-0 group-hover:opacity-100 ${
+                      isDark ? "hover:bg-red-500/20" : "hover:bg-red-500/10"
+                    } transition-all duration-200`}
+                    title="Delete wallet"
+                  >
+                    <Trash2Icon
+                      className={`h-4 w-4 ${
+                        isDark ? "text-red-400" : "text-red-500"
+                      }`}
+                    />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
