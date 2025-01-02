@@ -27,11 +27,16 @@ const BlockchainSelector = () => {
     setHasMnemonic(generated);
     setMnemonic(phrase);
   };
-
+  const handleClick = () => {
+    navigate("/");
+  };
   return (
     <div className={`min-h-screen p-8 ${isDark ? "bg-black" : "bg-white"}`}>
       <nav className="flex justify-between items-center mb-16">
-        <div className="flex items-center space-x-2">
+        <div
+          onClick={handleClick}
+          className="flex items-center space-x-2 cursor-pointer"
+        >
           <CurlyBracesIcon
             className={`h-8 w-8 ${isDark ? "text-white" : "text-black"}`}
           />

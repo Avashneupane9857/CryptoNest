@@ -1,9 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { mnemonicToSeed } from "bip39";
 import { derivePath } from "ed25519-hd-key";
-import { Keypair } from "@solana/web3.js";
+import {
+  Keypair,
+  Connection,
+  LAMPORTS_PER_SOL,
+  clusterApiUrl,
+} from "@solana/web3.js";
 import nacl from "tweetnacl";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   PlusCircleIcon,
   WalletIcon,
@@ -12,27 +17,74 @@ import {
   MoonIcon,
   CurlyBracesIcon,
   Trash2Icon,
+  RefreshCwIcon,
 } from "lucide-react";
 
 export function SolanaWallet() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [publicKeys, setPublicKeys] = useState([]);
+  const [balances, setBalances] = useState({});
   const [isDark, setIsDark] = useState(true);
-  const [isCopied, setIsCopied] = useState<number | null>(null);
+  const [isCopied, setIsCopied] = useState(null);
+  const [isBalanceLoading, setIsBalanceLoading] = useState({});
   const location = useLocation();
   const { mnemonic } = location.state;
 
+  // const connection = new Connection("https://api.mainnet-beta.solana.com");
+  // const connection = new Connection("https://api.mainnet-beta.solana.com");
+
   const generateWallet = async () => {
-    const seed = await mnemonicToSeed(mnemonic);
-    const path = `m/44'/501'/${currentIndex}'/0'`;
-    const derivedSeed = derivePath(path, seed.toString("hex")).key;
-    const secret = nacl.sign.keyPair.fromSeed(derivedSeed).secretKey;
-    const keypair = Keypair.fromSecretKey(secret);
-    setCurrentIndex(currentIndex + 1);
-    setPublicKeys([...publicKeys, keypair.publicKey]);
+    try {
+      const seed = await mnemonicToSeed(mnemonic);
+      const path = `m/44'/501'/${currentIndex}'/0'`;
+      const derivedSeed = derivePath(path, seed.toString("hex")).key;
+      const secret = nacl.sign.keyPair.fromSeed(derivedSeed).secretKey;
+      const keypair = Keypair.fromSecretKey(secret);
+      const newPublicKey = keypair.publicKey;
+
+      setCurrentIndex(currentIndex + 1);
+      setPublicKeys([...publicKeys, newPublicKey]);
+
+      fetchBalance(newPublicKey);
+    } catch (error) {
+      console.error("Failed to generate wallet:", error);
+    }
   };
 
-  const copyToClipboard = async (publicKey: string, index: number) => {
+  const fetchBalance = async (publicKey) => {
+    const keyString = publicKey.toBase58();
+    setIsBalanceLoading((prev) => ({ ...prev, [keyString]: true }));
+
+    try {
+      const balance = await connection.getBalance(publicKey);
+      const balanceInSOL = balance / LAMPORTS_PER_SOL;
+      setBalances((prev) => ({
+        ...prev,
+        [keyString]: balanceInSOL.toFixed(4),
+      }));
+    } catch (error) {
+      console.error("Failed to fetch balance:", error);
+      setBalances((prev) => ({
+        ...prev,
+        [keyString]: "Error",
+      }));
+    } finally {
+      setIsBalanceLoading((prev) => ({ ...prev, [keyString]: false }));
+    }
+  };
+
+  // Refresh balances
+  const refreshAllBalances = async () => {
+    publicKeys.forEach((publicKey) => fetchBalance(publicKey));
+  };
+
+  // Auto refresh balances every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(refreshAllBalances, 30000);
+    return () => clearInterval(interval);
+  }, [publicKeys]);
+
+  const copyToClipboard = async (publicKey, index) => {
     try {
       await navigator.clipboard.writeText(publicKey);
       setIsCopied(index);
@@ -42,14 +94,28 @@ export function SolanaWallet() {
     }
   };
 
-  const deleteWallet = (indexToDelete: number) => {
+  const deleteWallet = (indexToDelete) => {
+    const deletedPublicKey = publicKeys[indexToDelete].toBase58();
     setPublicKeys(publicKeys.filter((_, index) => index !== indexToDelete));
+    setBalances((prev) => {
+      const newBalances = { ...prev };
+      delete newBalances[deletedPublicKey];
+      return newBalances;
+    });
+  };
+
+  const navigate = useNavigate();
+  const handleClick = () => {
+    navigate("/");
   };
 
   return (
     <div className={`min-h-screen p-8 ${isDark ? "bg-black" : "bg-white"}`}>
       <nav className="flex justify-between items-center mb-16">
-        <div className="flex items-center space-x-2">
+        <div
+          onClick={handleClick}
+          className="flex items-center cursor-pointer space-x-2"
+        >
           <CurlyBracesIcon
             className={`h-8 w-8 ${isDark ? "text-white" : "text-black"}`}
           />
@@ -166,6 +232,31 @@ export function SolanaWallet() {
                     />
                   </button>
                 </div>
+              </div>
+              <div className="text-white">
+                <h1 className="font-bold text-2xl text-center p-7">
+                  Wallet {index + 1}
+                </h1>
+                <div className="flex gap-6 items-center">
+                  <h1 className="text-xl">Balance:</h1>
+                  {isBalanceLoading[publicKey.toBase58()] ? (
+                    <span className="text-xl">Loading...</span>
+                  ) : (
+                    <h1 className="text-xl">
+                      {balances[publicKey.toBase58()] || "0"} SOL
+                    </h1>
+                  )}
+                  <button
+                    onClick={() => fetchBalance(publicKey)}
+                    className="ml-2 p-2 rounded-md hover:bg-purple-500/20 transition-colors"
+                    title="Refresh balance"
+                  >
+                    <RefreshCwIcon className="h-4 w-4 text-purple-400" />
+                  </button>
+                </div>
+                <button className="bg-purple-600 rounded-xl px-3 mt-10 text-nowrap">
+                  Send
+                </button>
               </div>
             </div>
           ))}
