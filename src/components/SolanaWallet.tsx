@@ -48,7 +48,6 @@ export function SolanaWallet() {
 
   return (
     <div className={`min-h-screen p-8 ${isDark ? "bg-black" : "bg-white"}`}>
-      {/* Navigation */}
       <nav className="flex justify-between items-center mb-16">
         <div className="flex items-center space-x-2">
           <CurlyBracesIcon
@@ -77,7 +76,6 @@ export function SolanaWallet() {
         </button>
       </nav>
 
-      {/* Main Content */}
       <div className="max-w-3xl mx-auto">
         <h1
           className={`text-4xl font-bold mb-6 text-center ${
@@ -94,7 +92,6 @@ export function SolanaWallet() {
           Generate and manage your Solana wallet addresses
         </p>
 
-        {/* Generate Wallet Button */}
         <div className="mb-8">
           <button
             onClick={generateWallet}
@@ -105,7 +102,6 @@ export function SolanaWallet() {
           </button>
         </div>
 
-        {/* Wallet List */}
         <div className="space-y-4">
           {publicKeys.map((publicKey, index) => (
             <div
@@ -175,7 +171,6 @@ export function SolanaWallet() {
           ))}
         </div>
 
-        {/* Empty State */}
         {publicKeys.length === 0 && (
           <div
             className={`text-center p-8 rounded-xl ${
@@ -194,7 +189,6 @@ export function SolanaWallet() {
         )}
       </div>
 
-      {/* Footer */}
       <footer
         className={`fixed bottom-0 left-0 right-0 p-4 text-center text-sm ${
           isDark ? "text-gray-400" : "text-gray-600"
