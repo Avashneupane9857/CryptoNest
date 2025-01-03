@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from "react";
 import { mnemonicToSeed } from "bip39";
 import { Wallet, HDNodeWallet, JsonRpcProvider, parseEther } from "ethers";
@@ -13,25 +12,49 @@ import {
   SendIcon,
   XIcon,
 } from "lucide-react";
+interface WalletBalances {
+  [key: string]: string;
+}
+
+interface WalletLoadingState {
+  [key: string]: boolean;
+}
+interface TransactionData {
+  to: string;
+  amount: string;
+}
+
+interface WalletState {
+  [key: string]: Wallet;
+}
+
+interface LocationState {
+  mnemonic: string;
+}
 
 export const EthWallet = () => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [addresses, setAddresses] = useState([]);
-  const [balances, setBalances] = useState({});
-  const [isDark, setIsDark] = useState(true);
-  const [isCopied, setIsCopied] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isBalanceLoading, setIsBalanceLoading] = useState({});
-  const [showSendModal, setShowSendModal] = useState(false);
-  const [selectedWalletIndex, setSelectedWalletIndex] = useState(null);
-  const [transactionData, setTransactionData] = useState({
+  const [currentIndex, setCurrentIndex] = useState<number>(0);
+  const [addresses, setAddresses] = useState<string[]>([]);
+  const [balances, setBalances] = useState<WalletBalances>({});
+  const [isDark, setIsDark] = useState<boolean>(true);
+  const [isCopied, setIsCopied] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isBalanceLoading, setIsBalanceLoading] = useState<WalletLoadingState>(
+    {}
+  );
+  const [showSendModal, setShowSendModal] = useState<boolean>(false);
+  const [selectedWalletIndex, setSelectedWalletIndex] = useState<number | null>(
+    null
+  );
+  const [transactionData, setTransactionData] = useState<TransactionData>({
     to: "",
     amount: "",
   });
-  const [transactionStatus, setTransactionStatus] = useState("");
-  const [wallets, setWallets] = useState({});
+  const [transactionStatus, setTransactionStatus] = useState<string>("");
+  const [wallets, setWallets] = useState<WalletState>({});
+
   const location = useLocation();
-  const { mnemonic } = location.state;
+  const { mnemonic } = (location.state as LocationState) || { mnemonic: "" };
 
   const provider = new JsonRpcProvider(
     "https://mainnet.infura.io/v3/4fcc938b3b9c4ca4b5f3bd498cba5015"
@@ -60,7 +83,7 @@ export const EthWallet = () => {
     }
   };
 
-  const fetchBalance = async (address) => {
+  const fetchBalance = async (address: string) => {
     setIsBalanceLoading((prev) => ({ ...prev, [address]: true }));
     try {
       const balance = await provider.getBalance(address);
@@ -79,11 +102,14 @@ export const EthWallet = () => {
       setIsBalanceLoading((prev) => ({ ...prev, [address]: false }));
     }
   };
-
   const sendTransaction = async () => {
+    if (selectedWalletIndex === null) return;
+
     setTransactionStatus("Processing...");
     try {
-      const wallet = wallets[addresses[selectedWalletIndex]].connect(provider);
+      const wallet = wallets[addresses[selectedWalletIndex]]?.connect(provider);
+      if (!wallet) throw new Error("Wallet not found");
+
       const tx = await wallet.sendTransaction({
         to: transactionData.to,
         value: parseEther(transactionData.amount),
@@ -102,7 +128,21 @@ export const EthWallet = () => {
       }, 2000);
     } catch (error) {
       console.error("Transaction failed:", error);
-      setTransactionStatus(`Transaction failed: ${error.message}`);
+      setTransactionStatus(
+        `Transaction failed: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  };
+
+  const copyToClipboard = async (address: string, index: number) => {
+    try {
+      await navigator.clipboard.writeText(address);
+      setIsCopied(index);
+      setTimeout(() => setIsCopied(null), 2000);
+    } catch (error) {
+      console.error("Failed to copy:", error);
     }
   };
 
@@ -114,15 +154,6 @@ export const EthWallet = () => {
     return () => clearInterval(interval);
   }, [addresses]);
 
-  const copyToClipboard = async (address, index) => {
-    try {
-      await navigator.clipboard.writeText(address);
-      setIsCopied(index);
-      setTimeout(() => setIsCopied(null), 2000);
-    } catch (error) {
-      console.error("Failed to copy:", error);
-    }
-  };
   const SendModal = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
       <div
@@ -136,7 +167,8 @@ export const EthWallet = () => {
               isDark ? "text-white" : "text-black"
             }`}
           >
-            Send ETH from Wallet {selectedWalletIndex + 1}
+            {/* Send ETH from Wallet {selectedWalletIndex + 1} */}
+            Send ETH from Wallet
           </h3>
           <button
             onClick={() => {

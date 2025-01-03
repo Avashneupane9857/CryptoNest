@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, SetStateAction } from "react";
 import { mnemonicToSeed } from "bip39";
 import { derivePath } from "ed25519-hd-key";
 import {
   Keypair,
   Connection,
   LAMPORTS_PER_SOL,
-  clusterApiUrl,
+  PublicKey,
 } from "@solana/web3.js";
 import nacl from "tweetnacl";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -19,19 +19,32 @@ import {
   Trash2Icon,
   RefreshCwIcon,
 } from "lucide-react";
+interface SolanaLocationState {
+  mnemonic: string;
+}
+interface WalletBalances {
+  [key: string]: string;
+}
 
+interface WalletLoadingState {
+  [key: string]: boolean;
+}
 export function SolanaWallet() {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [publicKeys, setPublicKeys] = useState([]);
-  const [balances, setBalances] = useState({});
-  const [isDark, setIsDark] = useState(true);
-  const [isCopied, setIsCopied] = useState(null);
-  const [isBalanceLoading, setIsBalanceLoading] = useState({});
-  const location = useLocation();
-  const { mnemonic } = location.state;
+  const [currentIndex, setCurrentIndex] = useState<number>(0);
+  const [publicKeys, setPublicKeys] = useState<PublicKey[]>([]);
+  const [balances, setBalances] = useState<WalletBalances>({});
+  const [isDark, setIsDark] = useState<boolean>(true);
+  const [isCopied, setIsCopied] = useState<number | null>(null);
+  const [isBalanceLoading, setIsBalanceLoading] = useState<WalletLoadingState>(
+    {}
+  );
 
-  // const connection = new Connection("https://api.mainnet-beta.solana.com");
-  // const connection = new Connection("https://api.mainnet-beta.solana.com");
+  const location = useLocation();
+  const { mnemonic } = (location.state as SolanaLocationState) || {
+    mnemonic: "",
+  };
+
+  const connection = new Connection("https://api.devnet.solana.com");
 
   const generateWallet = async () => {
     try {
@@ -51,7 +64,7 @@ export function SolanaWallet() {
     }
   };
 
-  const fetchBalance = async (publicKey) => {
+  const fetchBalance = async (publicKey: PublicKey) => {
     const keyString = publicKey.toBase58();
     setIsBalanceLoading((prev) => ({ ...prev, [keyString]: true }));
 
@@ -84,7 +97,10 @@ export function SolanaWallet() {
     return () => clearInterval(interval);
   }, [publicKeys]);
 
-  const copyToClipboard = async (publicKey, index) => {
+  const copyToClipboard = async (
+    publicKey: string,
+    index: SetStateAction<number | null>
+  ) => {
     try {
       await navigator.clipboard.writeText(publicKey);
       setIsCopied(index);
@@ -94,8 +110,10 @@ export function SolanaWallet() {
     }
   };
 
-  const deleteWallet = (indexToDelete) => {
-    const deletedPublicKey = publicKeys[indexToDelete].toBase58();
+  const deleteWallet = (indexToDelete: number) => {
+    const deletedPublicKey = publicKeys[indexToDelete]?.toBase58();
+    if (!deletedPublicKey) return;
+
     setPublicKeys(publicKeys.filter((_, index) => index !== indexToDelete));
     setBalances((prev) => {
       const newBalances = { ...prev };
@@ -103,7 +121,6 @@ export function SolanaWallet() {
       return newBalances;
     });
   };
-
   const navigate = useNavigate();
   const handleClick = () => {
     navigate("/");
