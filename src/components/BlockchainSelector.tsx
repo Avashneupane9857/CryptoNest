@@ -171,7 +171,7 @@ const BlockchainSelector = () => {
           isDark ? "text-gray-400" : "text-gray-600"
         }`}
       >
-        Developed with ❤️ by Mugi
+        Developed with ❤️ by Avsh
       </footer>
     </div>
   );
